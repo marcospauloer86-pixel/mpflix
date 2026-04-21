@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MarquinhosFLIX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red: #e63030;
+    --red-dim: #9b1c1c;
+    --bg: #0a0a0a;
+    --card: #111111;
+    --surface: #1a1a1a;
+    --border: #2a2a2a;
+    --text: #e8e8e8;
+    --muted: #777;
+    --faint: #333;
+  }
+  html, body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+  /* HEADER */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 40px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,10,0.93); backdrop-filter: blur(14px);
+  }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; letter-spacing: 3px; color: var(--red); }
+  .user-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 40px; padding: 6px 14px; font-size: 13px; color: var(--muted);
+    cursor: pointer; transition: border-color 0.2s;
+  }
+  .user-pill:hover { border-color: var(--red); color: var(--text); }
+  .u-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); }
+
+  /* LAYOUT */
+  main { display: grid; grid-template-columns: 1fr 330px; min-height: calc(100vh - 57px); }
+
+  /* VIDEO SIDE */
+  .v-side { padding: 28px 28px 28px 40px; }
+  .video-wrap {
+    position: relative; background: #000; border-radius: 12px;
+    overflow: hidden; box-shadow: 0 12px 50px rgba(0,0,0,0.9); aspect-ratio: 16/9;
+  }
+  #mainVideo { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
+  .overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    justify-content: flex-end;
+    background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, transparent 50%);
+    opacity: 0; transition: opacity 0.25s;
+  }
+  .video-wrap:hover .overlay { opacity: 1; }
+  .center-btn {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 68px; height: 68px; background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.25); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .center-btn:hover { transform: translate(-50%,-50%) scale(1.1); background: rgba(230,48,48,0.28); }
+  .tri { width:0; height:0; border-top:12px solid transparent; border-bottom:12px solid transparent; border-left:20px solid #fff; margin-left:4px; }
+  .pbars { display:flex; gap:5px; }
+  .pbar { width:5px; height:20px; background:#fff; border-radius:2px; }
+  .bot-ctrl { padding: 10px 14px; }
+  .seek-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  input[type=range] { flex:1; height:3px; appearance:none; background:var(--faint); border-radius:2px; cursor:pointer; outline:none; }
+  input[type=range]::-webkit-slider-thumb { appearance:none; width:13px; height:13px; border-radius:50%; background:var(--red); cursor:pointer; }
+  .t { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; min-width:36px; }
+  .vol-row { display:flex; align-items:center; gap:8px; }
+  .ibtn { background:none; border:none; cursor:pointer; color:var(--muted); font-size:17px; padding:3px 5px; border-radius:4px; transition:color 0.15s; }
+  .ibtn:hover { color:var(--text); }
+  .vslider { width:80px !important; flex:none !important; }
+  .auto-row { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); }
+  .tog { width:28px; height:15px; background:var(--faint); border-radius:8px; position:relative; cursor:pointer; transition:background 0.2s; }
+  .tog.on { background:var(--red); }
+  .tog::after { content:''; position:absolute; top:2px; left:2px; width:11px; height:11px; border-radius:50%; background:#fff; transition:left 0.2s; }
+  .tog.on::after { left:15px; }
+
+  /* NOW PLAYING */
+  .now { margin-top:20px; }
+  .now-lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:6px; }
+  .now-title { font-size:1.3rem; font-weight:500; }
+  .now-sub { font-size:13px; color:var(--muted); margin-top:4px; }
+  .save-chip {
+    display:inline-flex; align-items:center; gap:5px;
+    background:#14291a; color:#4ade80; font-size:11px;
+    padding:3px 10px; border-radius:20px; margin-top:10px;
+    opacity:0; transition:opacity 0.3s;
+  }
+  .save-chip.show { opacity:1; }
+
+  /* EP LIST */
+  .ep-side { border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+  .ep-hdr { padding:22px 20px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .ep-hdr h2 { font-size:12px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); font-weight:400; }
+  .ep-cnt { font-size:12px; color:var(--faint); margin-top:2px; }
+  .ep-scroll { overflow-y:auto; flex:1; padding:10px; }
+  .ep-scroll::-webkit-scrollbar { width:3px; }
+  .ep-scroll::-webkit-scrollbar-thumb { background:var(--faint); border-radius:2px; }
+  .ep-card {
+    display:flex; align-items:flex-start; gap:11px; padding:11px 10px;
+    border-radius:9px; cursor:pointer; border:1px solid transparent;
+    transition:background 0.15s, border-color 0.15s; margin-bottom:3px;
+  }
+  .ep-card:hover { background:var(--surface); }
+  .ep-card.active { background:var(--surface); border-color:var(--red); }
+  .ep-num { width:38px; height:26px; flex-shrink:0; background:var(--faint); border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--muted); font-weight:500; }
+  .ep-card.active .ep-num { background:var(--red-dim); color:#fca5a5; }
+  .ep-body { flex:1; min-width:0; }
+  .ep-name { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ep-bar { height:2px; background:var(--faint); border-radius:1px; margin-top:6px; overflow:hidden; }
+  .ep-fill { height:100%; background:var(--red); border-radius:1px; }
+  .ep-resume { font-size:11px; color:#4ade80; margin-top:4px; }
+
+  /* AUTH SCREEN */
+  #authScreen {
+    position:fixed; inset:0; background:var(--bg);
+    display:flex; align-items:center; justify-content:center; z-index:999;
+  }
+  .auth-box { text-align:center; max-width:400px; padding:0 20px; }
+  .auth-logo { font-family:'Bebas Neue',sans-serif; font-size:3.2rem; color:var(--red); letter-spacing:4px; margin-bottom:6px; }
+  .auth-tagline { color:var(--muted); font-size:14px; margin-bottom:36px; line-height:1.5; }
+  .auth-btn {
+    display:inline-flex; align-items:center; gap:10px;
+    background:var(--surface); border:1px solid var(--border);
+    color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px;
+    padding:13px 26px; border-radius:10px; cursor:pointer;
+    transition:border-color 0.2s, background 0.2s;
+  }
+  .auth-btn:hover { border-color:var(--red); background:#1c1212; }
+  .auth-note { font-size:12px; color:var(--faint); margin-top:14px; }
+  .spin { width:30px; height:30px; border:3px solid var(--faint); border-top-color:var(--red); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 16px; display:none; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .err { color:#f87171; font-size:13px; margin-top:12px; min-height:18px; }
+
+  @media (max-width:860px) {
+    main { grid-template-columns:1fr; }
+    .ep-side { border-left:none; border-top:1px solid var(--border); max-height:320px; }
+    header { padding:12px 20px; }
+    .v-side { padding:14px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">MarquinhosFLIX</div>
+    <p class="auth-tagline">Sua série do Google Drive com progresso<br>salvo automaticamente</p>
+    <div class="spin" id="spin"></div>
+    <button class="auth-btn" id="authBtn" onclick="startAuth()">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Entrar com Google
+    </button>
+    <p class="auth-note">Permissão somente leitura — seus arquivos não são modificados</p>
+    <p class="err" id="errMsg"></p>
+  </div>
+</div>
+
+<header>
+  <div class="logo">MarquinhosFLIX</div>
+  <div class="user-pill" onclick="signOut()" title="Clique para sair">
+    <div class="u-dot"></div>
+    <span id="uName">Conectado</span>
+    <span style="font-size:10px;opacity:0.4;margin-left:2px;">sair</span>
+  </div>
+</header>
+
+<main>
+  <div class="v-side">
+    <div class="video-wrap">
+      <video id="mainVideo" preload="metadata"></video>
+      <div class="overlay">
+        <div class="center-btn" id="cBtn" onclick="togglePlay()">
+          <div class="tri" id="triIco"></div>
+        </div>
+        <div class="bot-ctrl">
+          <div class="seek-row">
+            <span class="t" id="curT">0:00</span>
+            <input type="range" id="seekBar" min="0" max="100" value="0" step="0.1" oninput="doSeek(this.value)">
+            <span class="t" id="totT">0:00</span>
+          </div>
+          <div class="vol-row">
+            <button class="ibtn" id="muteB" onclick="toggleMute()">🔊</button>
+            <input type="range" class="vslider" id="volB" min="0" max="1" step="0.05" value="1" oninput="setVol(this.value)">
+            <div class="auto-row">
+              <span>Próximo auto</span>
+              <div class="tog on" id="autoTog" onclick="toggleAuto()"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="now">
+      <div class="now-lbl">Assistindo agora</div>
+      <div class="now-title" id="nowTitle">—</div>
+      <div class="now-sub" id="nowSub">Selecione um episódio ao lado</div>
+      <div class="save-chip" id="saveChip">✓ progresso salvo</div>
+    </div>
+  </div>
+
+  <div class="ep-side">
+    <div class="ep-hdr">
+      <h2>Episódios</h2>
+      <div class="ep-cnt" id="epCnt">Carregando...</div>
+    </div>
+    <div class="ep-scroll" id="epList"></div>
+  </div>
+</main>
+
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script>
+// ═══════════════════════════════════════
+//  CONFIGURAÇÃO
+// ═══════════════════════════════════════
+const CLIENT_ID  = '1006987652844-mloocttcker04v28mkt8fe1ndlkb8k28.apps.googleusercontent.com';
+const FOLDER_ID  = '1It6rOOIE7NNcTKWVcP-BwnPlKtEMAmQi'; // ID da sua pasta principal
+const SAVE_KEY   = 'drivestream_v1';
+// ═══════════════════════════════════════
+
+let episodes = [], curIdx = -1, autoNext = true, saveTimer, tokenClient;
+
+function prog()      { try { return JSON.parse(localStorage.getItem(SAVE_KEY)||'{}'); } catch { return {}; } }
+function saveProg(id,t){ const p=prog(); p[id]=Math.floor(t); localStorage.setItem(SAVE_KEY,JSON.stringify(p)); }
+function getSaved(id){ return prog()[id]||0; }
+function fmt(s){ s=Math.floor(s||0); const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60; return h?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${m}:${String(sec).padStart(2,'0')}`; }
+
+window.addEventListener('load',()=>{
+  gapi.load('client',async()=>{
+    await gapi.client.init({ discoveryDocs:['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
+  });
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/drive.readonly',
+    callback: handleToken
+  });
+});
+
+function startAuth(){
+  document.getElementById('spin').style.display='block';
+  document.getElementById('authBtn').style.display='none';
+  document.getElementById('errMsg').textContent='';
+  tokenClient.requestAccessToken({ prompt:'consent' });
+}
+
+async function handleToken(resp){
+  if(resp.error){
+    document.getElementById('spin').style.display='none';
+    document.getElementById('authBtn').style.display='inline-flex';
+    document.getElementById('errMsg').textContent='Erro: '+resp.error;
+    return;
+  }
+  try {
+    // Busca recursiva: Procura vídeos que tenham acesso e filtra para o sistema
+    // Removida a trava de "parents" imediato para alcançar as subpastas
+    const res = await gapi.client.drive.files.list({
+      q: `mimeType contains 'video/' and trashed = false`, 
+      fields:'files(id,name,parents)', 
+      orderBy:'name', 
+      pageSize:200
+    });
+    
+    const files = res.result.files||[];
+    if(!files.length){ showErr('Nenhum vídeo encontrado no seu Drive.'); return; }
+
+    episodes = files.map(f=>({ 
+      id:f.id, 
+      name:f.name.replace(/\.[^.]+$/,''), 
+      src:`https://www.googleapis.com/drive/v3/files/${f.id}?alt=media` 
+    }));
+
+    try {
+      const me = await gapi.client.request({ path:'https://www.googleapis.com/oauth2/v1/userinfo' });
+      document.getElementById('uName').textContent = me.result.given_name||me.result.email||'Conectado';
+    } catch{}
+
+    document.getElementById('authScreen').style.display='none';
+    renderList();
+    playEp(0);
+  } catch(e){
+    showErr('Erro ao acessar Drive: '+(e?.result?.error?.message||e?.message||'verifique as permissões.'));
+  }
+}
+
+function showErr(msg){
+  document.getElementById('spin').style.display='none';
+  document.getElementById('authBtn').style.display='inline-flex';
+  document.getElementById('errMsg').textContent=msg;
+}
+
+function signOut(){
+  const t=gapi.client.getToken();
+  if(t) google.accounts.oauth2.revoke(t.access_token,()=>{});
+  gapi.client.setToken(null);
+  location.reload();
+}
+
+function renderList(){
+  const p=prog();
+  document.getElementById('epCnt').textContent=`${episodes.length} episódio${episodes.length!==1?'s':''}`;
+  document.getElementById('epList').innerHTML=episodes.map((ep,i)=>{
+    const s=p[ep.id]||0;
+    return `<div class="ep-card" id="ec${i}" onclick="playEp(${i})">
+      <div class="ep-num">EP${i+1}</div>
+      <div class="ep-body">
+        <div class="ep-name">${ep.name}</div>
+        <div class="ep-bar"><div class="ep-fill" id="ef${i}" style="width:0%"></div></div>
+        ${s>5?`<div class="ep-resume">▶ Retomar em ${fmt(s)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function playEp(idx){
+  if(curIdx===idx)return;
+  if(curIdx>=0) document.getElementById('ec'+curIdx)?.classList.remove('active');
+  curIdx=idx;
+  const ep=episodes[idx];
+  document.getElementById('nowTitle').textContent=ep.name;
+  document.getElementById('nowSub').textContent=`Episódio ${idx+1} de ${episodes.length}`;
+  const card=document.getElementById('ec'+idx);
+  card?.classList.add('active');
+  card?.scrollIntoView({block:'nearest',behavior:'smooth'});
+
+  const vid=document.getElementById('mainVideo');
+  const token=gapi.client.getToken()?.access_token;
+  
+  if(token){
+    // Solução direta para o link do vídeo usando Access Token na URL (evita erros de CORS)
+    const videoUrl = `https://www.googleapis.com/drive/v3/files/${ep.id}?alt=media&access_token=${token}`;
+    vid.src = videoUrl;
+    vid.load();
+    
+    const onLoaded = () => {
+      const s = getSaved(ep.id);
+      if(s > 5) vid.currentTime = s;
+      vid.play().catch(()=>{});
+      vid.removeEventListener('loadedmetadata', onLoaded);
+    };
+    vid.addEventListener('loadedmetadata', onLoaded);
+  }
+}
+
+const vid=document.getElementById('mainVideo');
+
+vid.addEventListener('timeupdate',()=>{
+  if(!vid.duration)return;
+  const pct=(vid.currentTime/vid.duration)*100;
+  document.getElementById('seekBar').value=pct;
+  document.getElementById('curT').textContent=fmt(vid.currentTime);
+  document.getElementById('totT').textContent=fmt(vid.duration);
+  if(curIdx>=0){ const f=document.getElementById('ef'+curIdx); if(f)f.style.width=Math.min(pct,98)+'%'; }
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    if(curIdx>=0&&vid.currentTime>5){
+      saveProg(episodes[curIdx].id,vid.currentTime);
+      const c=document.getElementById('saveChip');
+      c.classList.add('show');
+      setTimeout(()=>c.classList.remove('show'),2000);
+    }
+  },5000);
+});
+
+vid.addEventListener('ended',()=>{ if(autoNext&&curIdx<episodes.length-1) setTimeout(()=>playEp(curIdx+1),1000); });
+vid.addEventListener('play',()=>{
+  document.getElementById('triIco').style.display='none';
+  const b=document.getElementById('cBtn');
+  if(!document.getElementById('pbarsEl')) b.insertAdjacentHTML('afterbegin','<div id="pbarsEl" class="pbars"><div class="pbar"></div><div class="pbar"></div></div>');
+});
+vid.addEventListener('pause',()=>{
+  document.getElementById('triIco').style.display='';
+  document.getElementById('pbarsEl')?.remove();
+});
+
+function togglePlay(){ vid.paused?vid.play():vid.pause(); }
+function doSeek(v){ if(vid.duration)vid.currentTime=(v/100)*vid.duration; }
+function setVol(v){ vid.volume=v; document.getElementById('muteB').textContent=v==0?'🔇':v<0.5?'🔉':'🔊'; }
+function toggleMute(){ vid.muted=!vid.muted; document.getElementById('muteB').textContent=vid.muted?'🔇':'🔊'; }
+function toggleAuto(){ autoNext=!autoNext; document.getElementById('autoTog').classList.toggle('on',autoNext); }
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.key===' '||e.key==='k'){e.preventDefault();togglePlay();}
+  if(e.key==='ArrowRight') vid.currentTime=Math.min(vid.duration,vid.currentTime+10);
+  if(e.key==='ArrowLeft')  vid.currentTime=Math.max(0,vid.currentTime-10);
+  if(e.key==='m') toggleMute();
+  if(e.key==='n'&&curIdx<episodes.length-1) playEp(curIdx+1);
+});
+</script>
+</body>
+</html>
